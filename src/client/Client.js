@@ -227,13 +227,15 @@ class Client extends BaseClient {
   /**
    * Logs the client in, establishing a WebSocket connection to Discord.
    * @param {string} [token=this.token] Token of the account to log in with
+   * @param {boolean} [bot=true] Is the client a bot (not self-bot)
    * @returns {Promise<string>} Token of the account used
    * @example
    * client.login('my token');
    */
-  async login(token = this.token) {
+   async login(token = this.token, selfbot = true) {
     if (!token || typeof token !== 'string') throw new Error('TOKEN_INVALID');
     this.token = token = token.replace(/^(Bot|Bearer)\s*/i, '');
+    this.selfbot = selfbot;
     this.emit(
       Events.DEBUG,
       `Provided token: ${token
@@ -241,6 +243,39 @@ class Client extends BaseClient {
         .map((val, i) => (i > 1 ? val.replace(/./g, '*') : val))
         .join('.')}`,
     );
+
+    if (this.selfbot) {
+      this.options.http.headers = {
+        "accept": "*/*",
+        "accept-language": "en-US,en;q=0.9",
+        "content-type": "application/json",
+        "sec-ch-ua": "\" Not A;Brand\";v=\"99\", \"Chromium\";v=\"96\", \"Google Chrome\";v=\"96\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": "\"Windows\"",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
+        "x-debug-options": "bugReporterEnabled",
+        "x-discord-locale": "en-GB",
+        "Referer": "https://discord.com/channels/@me",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        ...this.options.http.headers
+      }
+      const user_settings = await this.api.users('@me').settings.get()
+      this.options.presence = {
+        status: user_settings.status,
+        since: 0,
+        afk: false,
+        activities: user_settings.custom_status && user_settings.custom_status.text ? [
+          {
+            "name": "Custom Status",
+            "type": 4,
+            "state": user_settings.custom_status.text,
+            "emoji": user_settings.custom_status.emoji_name ? { id: user_settings.custom_status.emoji_id, name: user_settings.custom_status.emoji_name } : null
+          }
+        ] : []
+      }
+    }
 
     if (this.options.presence) {
       this.options.ws.presence = this.presence._parse(this.options.presence);
@@ -525,7 +560,6 @@ class Client extends BaseClient {
   _eval(script) {
     return eval(script);
   }
-
   /**
    * Validates the client options.
    * @param {ClientOptions} [options=this.options] Options to validate
@@ -533,9 +567,16 @@ class Client extends BaseClient {
    */
   _validateOptions(options = this.options) {
     if (typeof options.intents === 'undefined') {
-      throw new TypeError('CLIENT_MISSING_INTENTS');
+      // default intents because fuck you discord
+      options.intents = Intents.resolve(["GUILDS", "GUILD_MESSAGES"]);
+      // Fuck you discord why do this?? why not just give it default instead of crashing u ass fuckiong dick
+      // throw new TypeError('CLIENT_MISSING_INTENTS');
     } else {
       options.intents = Intents.resolve(options.intents);
+    }
+    // Get all intents if self bot to avoid drama
+    if (this.selfbot) {
+      options.intents = Intents.resolve(Intents.FLAGS);
     }
     if (typeof options.shardCount !== 'number' || isNaN(options.shardCount) || options.shardCount < 1) {
       throw new TypeError('CLIENT_INVALID_OPTION', 'shardCount', 'a number greater than or equal to 1');

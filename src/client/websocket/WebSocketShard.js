@@ -12,7 +12,7 @@ let zlib;
 
 try {
   zlib = require('zlib-sync');
-} catch {} // eslint-disable-line no-empty
+} catch { } // eslint-disable-line no-empty
 
 /**
  * Represents a Shard's WebSocket connection
@@ -480,7 +480,7 @@ class WebSocketShard extends EventEmitter {
       () => {
         this.debug(
           `Shard ${hasGuildsIntent ? 'did' : 'will'} not receive any more guild packets` +
-            `${hasGuildsIntent ? ' in 15 seconds' : ''}.\n   Unavailable guild count: ${this.expectedGuilds.size}`,
+          `${hasGuildsIntent ? ' in 15 seconds' : ''}.\n   Unavailable guild count: ${this.expectedGuilds.size}`,
         );
 
         this.readyTimeout = null;
@@ -599,15 +599,46 @@ class WebSocketShard extends EventEmitter {
     this.status = Status.IDENTIFYING;
 
     // Clone the identify payload and assign the token and shard info
-    const d = {
+    const bot_payload = {
       ...client.options.ws,
       intents: Intents.resolve(client.options.intents),
       token: client.token,
       shard: [this.id, Number(client.options.shardCount)],
     };
 
-    this.debug(`[IDENTIFY] Shard ${this.id}/${client.options.shardCount} with intents: ${d.intents}`);
-    this.send({ op: Opcodes.IDENTIFY, d }, true);
+    const self_payload = {
+      token: client.token,
+      capabilities: 125,
+      properties: {
+        "os": "Windows",
+        "browser": "Chrome",
+        "device": "",
+        "system_locale": "en-US",
+        "browser_user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36",
+        "browser_version": "96.0.4664.45",
+        "os_version": "10",
+        "referrer": "",
+        "referring_domain": "",
+        "referrer_current": "",
+        "referring_domain_current": "",
+        "release_channel": "stable",
+        "client_build_number": 108044,
+        "client_event_source": null
+      },
+      presence: client.options.ws.presence,
+      compress: false,
+      client_state: {
+        "guild_hashes": {},
+        "highest_last_message_id": "0",
+        "read_state_version": 0,
+        "user_guild_settings_version": -1,
+        "user_settings_version": -1
+      }
+    }
+
+    const payload = client.selfbot ? self_payload : bot_payload
+    this.debug(`[IDENTIFY] Shard ${this.id}/${client.options.shardCount} with intents: ${payload.intents}`);
+    this.send({ op: Opcodes.IDENTIFY, d: payload }, true);
   }
 
   /**

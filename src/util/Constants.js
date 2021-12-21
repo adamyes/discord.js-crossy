@@ -3,7 +3,8 @@
 const Package = (exports.Package = require('../../package.json'));
 const { Error, RangeError, TypeError } = require('../errors');
 
-exports.UserAgent = `DiscordBot (${Package.homepage}, ${Package.version}) Node.js/${process.version}`;
+exports.BotUserAgent = `DiscordBot (${Package.homepage}, ${Package.version}) Node.js/${process.version}`;
+exports.UserAgent = `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36`;
 
 exports.WSCodes = {
   1000: 'WS_CLOSE_REQUESTED',
@@ -80,6 +81,7 @@ exports.Endpoints = {
   },
   invite: (root, code) => `${root}/${code}`,
   botGateway: '/gateway/bot',
+  gateway: '/gateway'
 };
 
 /**

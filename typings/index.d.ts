@@ -548,6 +548,7 @@ export class Client<Ready extends boolean = boolean> extends BaseClient {
   public sweepers: Sweepers;
   public shard: ShardClientUtil | null;
   public token: If<Ready, string, string | null>;
+  public readonly selfbot: boolean;
   public uptime: If<Ready, number>;
   public user: If<Ready, ClientUser>;
   public users: UserManager;
@@ -563,7 +564,7 @@ export class Client<Ready extends boolean = boolean> extends BaseClient {
   public fetchWebhook(id: Snowflake, token?: string): Promise<Webhook>;
   public fetchGuildWidget(guild: GuildResolvable): Promise<Widget>;
   public generateInvite(options?: InviteGenerationOptions): string;
-  public login(token?: string): Promise<string>;
+  public login(token?: string, selfbot?: boolean): Promise<string>;
   public isReady(): this is Client<true>;
   /** @deprecated Use {@link Sweepers#sweepMessages} instead */
   public sweepMessages(lifetime?: number): number;

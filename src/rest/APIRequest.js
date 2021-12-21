@@ -3,7 +3,7 @@
 const https = require('node:https');
 const FormData = require('@discordjs/form-data');
 const fetch = require('node-fetch');
-const { UserAgent } = require('../util/Constants');
+const { UserAgent, BotUserAgent } = require('../util/Constants');
 
 let agent = null;
 
@@ -17,7 +17,7 @@ class APIRequest {
     this.retries = 0;
 
     const { userAgentSuffix } = this.client.options;
-    this.fullUserAgent = `${UserAgent}${userAgentSuffix.length ? `, ${userAgentSuffix.join(', ')}` : ''}`;
+    this.fullUserAgent = `${this.client.selfbot ? UserAgent : BotUserAgent}${userAgentSuffix.length ? `, ${userAgentSuffix.join(', ')}` : ''}`;
 
     let queryString = '';
     if (options.query) {

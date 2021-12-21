@@ -229,6 +229,17 @@ class RequestHandler {
 
     let sublimitTimeout;
     if (res.headers) {
+      //Set cookie
+      try{
+        const set_cookie = res.headers.get('set-cookie').match(/(__dcfduid=[a-zA-Z0-9]+;|__sdcfduid=[a-z0-9]+)/g).join(" ");
+        // if (!this.manager.client.options.http.headers) 
+        this.manager.client.options.http.headers = {
+          ...this.manager.client.options.http.headers,
+          "cookie": set_cookie
+        };
+      }catch (ex){
+        // console.log(ex);
+      }
       const serverDate = res.headers.get('date');
       const limit = res.headers.get('x-ratelimit-limit');
       const remaining = res.headers.get('x-ratelimit-remaining');
