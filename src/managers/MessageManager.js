@@ -226,9 +226,33 @@ class MessageManager extends CachedManager {
   }
 
   async _fetchMany(options = {}, cache) {
-    const data = await this.client.api.channels[this.channel.id].messages.get({ query: options });
     const messages = new Collection();
-    for (const message of data) messages.set(message.id, this._add(message, cache));
+    const between = (options.after && options.before)
+    const backwards = !options.after || between
+    const original_limit = options.limit;
+    options.limit ??= 100;
+    for (let i = 0; i < (between) ? (options.before - options.after) : Math.ceil(options.limit / 100); i++) {
+      options.limit = Math.min(options.limit, 100)
+      let data;
+      if (backwards && !options.after && !options.before) {
+        data = await this.client.api.channels[this.channel.id].messages.get({ query: options });
+      } else if (!between) {
+        data = await this.client.api.channels[this.channel.id].messages.get({ query: options });
+      } else {
+        data = await this.client.api.channels[this.channel.id].messages.get({ query: { before: options.before, limit: 100 } });
+      }
+      if (!backwards) data.reverse()
+      for (const message of data) {
+        if ((between && message.id < options.after) || messages.size == original_limit) {
+          messages.delete(options.after)
+          break;
+        }
+        messages.set(message.id, this._add(message, cache));
+      }
+      if(backwards) options.before = data.slice(-1)[0].id
+      if(!between && !backwards) options.after = data.slice(-1)[0].id
+      if (messages.size % 100 != 0 || messages.size == original_limit) break;
+    }
     return messages;
   }
 }
