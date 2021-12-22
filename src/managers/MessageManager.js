@@ -216,8 +216,13 @@ class MessageManager extends CachedManager {
       if (existing && !existing.partial) return existing;
     }
 
-    const data = await this.client.api.channels[this.channel.id].messages[messageId].get();
-    return this._add(data, cache);
+    if (!this.client.selfbot) {
+      const data = await this.client.api.channels[this.channel.id].messages[messageId].get();
+      return this._add(data, cache);
+    }else{
+      const data = await this._fetchMany({after: messageId.replace(/[0-9]{3}$/g, '000'), limit: 50});
+      return data.find(x=>x.id==messageId);
+    }
   }
 
   async _fetchMany(options = {}, cache) {
