@@ -385,8 +385,13 @@ class GuildMemberManager extends CachedManager {
       if (existing && !existing.partial) return existing;
     }
 
-    const data = await this.client.api.guilds(this.guild.id).members(user).get();
-    return this._add(data, cache);
+    if (!this.client.selfbot) {
+      const data = await this.client.api.guilds(this.guild.id).members(user).get();
+      return this._add(data, cache);
+    } else {
+      const data = await this._fetchMany({user: user});
+      return data;
+    }
   }
 
   _fetchMany({
