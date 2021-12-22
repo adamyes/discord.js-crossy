@@ -157,6 +157,39 @@ class GuildManager extends CachedManager {
    */
 
   /**
+   * Joins guild with an invite (STRICT TO SELFBOTS)
+   * @param {string|Invite} invite
+   * @returns {?Guild} 
+   */
+   async join(invite){
+    if(!this.client.selfbot) throw new Error("This method is strict to selfbots only");
+    try{
+      const res = await this.client.api.invites(typeof invite == 'string' ? invite.replace(/(https:\/\/|)discord.gg\//g ,'') : invite.code).post({data: {}});
+      const data = res.guild;
+      return new Promise(resolve => {
+        const handleGuild = guild => {
+          if (guild.id === data.id) {
+            clearTimeout(timeout);
+            this.client.removeListener(Events.GUILD_CREATE, handleGuild);
+            this.client.decrementMaxListeners();
+            resolve(guild);
+          }
+        };
+        this.client.incrementMaxListeners();
+        this.client.on(Events.GUILD_CREATE, handleGuild);
+  
+        const timeout = setTimeout(() => {
+          this.client.removeListener(Events.GUILD_CREATE, handleGuild);
+          this.client.decrementMaxListeners();
+          resolve(this.client.guilds._add(data));
+        }, 10_000).unref();
+      });
+    }catch{
+      return undefined
+    }
+  }
+
+  /**
    * Creates a guild.
    * <warn>This is only available to bots in fewer than 10 guilds.</warn>
    * @param {string} name The name of the guild

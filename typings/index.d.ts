@@ -2986,6 +2986,7 @@ export class GuildEmojiRoleManager extends DataManager<Snowflake, Role, RoleReso
 
 export class GuildManager extends CachedManager<Snowflake, Guild, GuildResolvable> {
   private constructor(client: Client, iterable?: Iterable<RawGuildData>);
+  public join(invite: string | Invite): Promise<Guild>;
   public create(name: string, options?: GuildCreateOptions): Promise<Guild>;
   public fetch(options: Snowflake | FetchGuildOptions): Promise<Guild>;
   public fetch(options?: FetchGuildsOptions): Promise<Collection<Snowflake, OAuth2Guild>>;

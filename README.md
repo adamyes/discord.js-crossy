@@ -41,10 +41,10 @@ client.login("TOKEN", false);
  - [x] Auto Client presence setting at startup.
  - [x] Fetch members for self-bots.
  - [x] Fetch messages for self-bots.
- - [ ] Unlimited channel message fetching.
+ - [x] Unlimited channel message fetching.
  - [ ] User Relationships.
  - [ ] User notes.
  - [ ] Manage cache.
- - [ ] Joining guilds.
+ - [x] Joining guilds.
  - [ ] Adding member subscriptions.
  - [ ] Adding channel subscriptions.
