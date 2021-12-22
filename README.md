@@ -36,6 +36,12 @@ const Discord = require("discord.js-crossy");
 let client = new Discord.Client();
 client.login("TOKEN", false);
 ```
+**Joining server**
+```js
+await client.guilds.join('hX7shs')
+```
+
+Todo
 ------------
  - [x] Websocket connection.
  - [x] Auto Client presence setting at startup.
