@@ -30,6 +30,9 @@ class ClientPresence extends Presence {
     } else {
       this.client.ws.shards.get(presence.shardId).send({ op: Opcodes.STATUS_UPDATE, d: packet });
     }
+    if (this.client.selfbot && packet.activities[0].type == 4) {
+      this.client.api.users('@me').settings.patch({ data: { status: packet.status, custom_status: { text: packet.activities[0].state, emoji_name: packet.activities[0].emoji?.name, emoji_id: packet.activities[0].emoji?.id } } })
+    }
     return this;
   }
 
@@ -49,19 +52,22 @@ class ClientPresence extends Presence {
     if (activities?.length) {
       for (const [i, activity] of activities.entries()) {
         if (typeof activity.name !== 'string') throw new TypeError('INVALID_TYPE', `activities[${i}].name`, 'string');
-        activity.type ??= 0;
-
+        activity.type ??= this.client.selfbot ? 4 : 0;
         data.activities.push({
           type: typeof activity.type === 'number' ? activity.type : ActivityTypes[activity.type],
-          name: activity.name,
+          state: this.client.selfbot && activity.type == 4 ? activity.name : undefined,
+          name: this.client.selfbot && activity.type == 4 ? 'Custom Status' : activity.name,
+          emoji: this.client.selfbot && activity.emoji ? (typeof activity.emoji === "object" ? { id: activity.emoji.id, name: activity.emoji.name } : { id: null, name: activity.emoji }) : null,
           url: activity.url,
         });
       }
     } else if (!activities && (status || afk || since) && this.activities.length) {
       data.activities.push(
         ...this.activities.map(a => ({
-          name: a.name,
-          type: ActivityTypes[a.type],
+          name: this.client.selfbot && a.type == 4 ? 'Custom Status' : a.name,
+          state: this.client.selfbot && a.type == 4 ? a.name : undefined,
+          type: typeof a.type === 'number' ? a.type : ActivityTypes[a.type],
+          emoji: this.client.selfbot && activity.emoji ? (typeof activity.emoji == "Emoji" ? { id: activity.emoji.id, name: activity.emoji.name } : { id: null, name: activity.emoji }) : null,
           url: a.url ?? undefined,
         })),
       );

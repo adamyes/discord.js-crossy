@@ -275,6 +275,7 @@ class Client extends BaseClient {
           }
         ] : []
       }
+      this.presence = new ClientPresence(this, this.options.presence)
     }
 
     if (this.options.presence) {

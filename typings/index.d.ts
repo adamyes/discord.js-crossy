@@ -3275,6 +3275,7 @@ export interface ActivityOptions {
   url?: string;
   type?: ExcludeEnum<typeof ActivityTypes, 'CUSTOM'>;
   shardId?: number | readonly number[];
+  emoji?: string | Emoji;
 }
 
 export type ActivityPlatform = 'desktop' | 'samsung' | 'xbox';
