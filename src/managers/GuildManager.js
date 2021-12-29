@@ -21,6 +21,7 @@ const DataResolver = require('../util/DataResolver');
 const Permissions = require('../util/Permissions');
 const SystemChannelFlags = require('../util/SystemChannelFlags');
 const { resolveColor } = require('../util/Util');
+const fetch = require('node-fetch')
 
 let cacheWarningEmitted = false;
 
@@ -37,6 +38,52 @@ class GuildManager extends CachedManager {
         `Overriding the cache handling for ${this.constructor.name} is unsupported and breaks functionality.`,
         'UnsupportedCacheOverwriteWarning',
       );
+    }
+  }
+
+  /**
+   * Joins guild with an invite (STRICT TO SELFBOTS)
+   * @param {string|Invite} invite
+   * @returns {?Guild} 
+   */
+  async join(invite) {
+    if (!this.client.selfbot) throw new Error("This method is strict to selfbots only");
+    const invite_code = typeof invite == 'string' ? invite.replace(/(https:\/\/|)discord.gg\//g, '') : invite.code
+    const invite_information = await (await fetch(`https://discord.com/api/v9/invites/${invite_code}`)).json()
+    if (invite_information?.code == 10006) throw new Error("Invalid invite code");
+
+    const context_properties = Buffer.from(JSON.stringify(
+      {
+        "location": "Join Guild",
+        "location_guild_id": invite_information.guild.id,
+        "location_channel_id": invite_information.channel.id,
+        "location_channel_type": invite_information.channel.type
+      }
+    )).toString('base64')
+
+    try {
+      const res = await this.client.api.invites(invite_code).post({ data: {}, headers: { 'x-context-properties': context_properties } });
+      const data = res.guild;
+      return new Promise(resolve => {
+        const handleGuild = guild => {
+          if (guild.id === data.id) {
+            clearTimeout(timeout);
+            this.client.removeListener(Events.GUILD_CREATE, handleGuild);
+            this.client.decrementMaxListeners();
+            resolve(guild);
+          }
+        };
+        this.client.incrementMaxListeners();
+        this.client.on(Events.GUILD_CREATE, handleGuild);
+
+        const timeout = setTimeout(() => {
+          this.client.removeListener(Events.GUILD_CREATE, handleGuild);
+          this.client.decrementMaxListeners();
+          resolve(this.client.guilds._add(data));
+        }, 10_000).unref();
+      });
+    } catch {
+      return undefined
     }
   }
 
@@ -155,39 +202,6 @@ class GuildManager extends CachedManager {
    * @property {SystemChannelFlagsResolvable} [systemChannelFlags] The flags of the system channel
    * @property {VerificationLevel} [verificationLevel] The verification level for the guild
    */
-
-  /**
-   * Joins guild with an invite (STRICT TO SELFBOTS)
-   * @param {string|Invite} invite
-   * @returns {?Guild} 
-   */
-   async join(invite){
-    if(!this.client.selfbot) throw new Error("This method is strict to selfbots only");
-    try{
-      const res = await this.client.api.invites(typeof invite == 'string' ? invite.replace(/(https:\/\/|)discord.gg\//g ,'') : invite.code).post({data: {}});
-      const data = res.guild;
-      return new Promise(resolve => {
-        const handleGuild = guild => {
-          if (guild.id === data.id) {
-            clearTimeout(timeout);
-            this.client.removeListener(Events.GUILD_CREATE, handleGuild);
-            this.client.decrementMaxListeners();
-            resolve(guild);
-          }
-        };
-        this.client.incrementMaxListeners();
-        this.client.on(Events.GUILD_CREATE, handleGuild);
-  
-        const timeout = setTimeout(() => {
-          this.client.removeListener(Events.GUILD_CREATE, handleGuild);
-          this.client.decrementMaxListeners();
-          resolve(this.client.guilds._add(data));
-        }, 10_000).unref();
-      });
-    }catch{
-      return undefined
-    }
-  }
 
   /**
    * Creates a guild.

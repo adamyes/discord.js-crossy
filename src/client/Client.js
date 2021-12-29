@@ -26,6 +26,7 @@ const Intents = require('../util/Intents');
 const Options = require('../util/Options');
 const Permissions = require('../util/Permissions');
 const Sweepers = require('../util/Sweepers');
+const fetch = require('node-fetch')
 
 /**
  * The main hub for interacting with the Discord API, and the starting point for any bot.
@@ -245,6 +246,18 @@ class Client extends BaseClient {
     );
 
     if (this.selfbot) {
+      let x_superproperties = {"os":"Windows","browser":"Chrome","device":"","system_locale":"en-US","browser_user_agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36","browser_version":"96.0.4664.110","os_version":"10","referrer":"","referring_domain":"","referrer_current":"","referring_domain_current":"","release_channel":"stable","client_build_number":108924,"client_event_source":null}
+      try{
+        const res = await fetch('https://discord.com/channels/@me');
+        const text = await res.text();
+        const file_link = [...text.matchAll(/<script src="\/assets\/[0-9a-z]+\.js/g)].slice(-2)[0][0].replace('<script src="', 'https://discord.com')
+        console.log(file_link);
+        const file_res = await fetch(file_link)
+        const file_text = await file_res.text();
+        const client_build_number = file_text.match(/"buildNumber","[0-9]+"/g)[0].match(/[0-9]+/g)[0]
+        x_superproperties['client_build_number'] = parseInt(client_build_number);
+      }catch{}
+      // const finger_print = (await (await fetch('https://discord.com/api/v9/auth/fingerprint', {'method': 'POST'})).json()).fingerprint
       this.options.http.headers = {
         "accept": "*/*",
         "accept-language": "en-US,en;q=0.9",
@@ -259,7 +272,9 @@ class Client extends BaseClient {
         "x-discord-locale": "en-GB",
         "Referer": "https://discord.com/channels/@me",
         "Referrer-Policy": "strict-origin-when-cross-origin",
-        ...this.options.http.headers
+        ...this.options.http.headers,
+        // 'x-fingerprint': finger_print,
+        "x-super-properties": Buffer.from(JSON.stringify(x_superproperties)).toString('base64')
       }
       const user_settings = await this.api.users('@me').settings.get()
       this.options.presence = {
