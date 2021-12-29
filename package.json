@@ -1,6 +1,6 @@
 {
   "name": "discord.js-crossy",
-  "version": "13.4.2",
+  "version": "13.4.3",
   "description": "Discord.js v13 with selfbots support",
   "scripts": {
     "test": "npm run lint && npm run docs:test && npm run lint:typings && npm run test:typescript",
